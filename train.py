@@ -104,20 +104,26 @@ def init_edge(x,edge_index,config):
         adj=scipy_to_torch(adj)
 
         global Lambda, U, mean, direction
-        path=osp.join('eigs',config['dataset'],'lambda.pt')
+        path=osp.join('/content/GRACEIS/eigs',config['dataset'],'lambda.pt')
         if osp.exists(path)==False:
             adj=adj.to(device)
-            (Lambda,U) = torch.eig(adj.to_dense(),eigenvectors=True)
-            Lambda=torch.tensor(Lambda).to(device)
-            Lambda=Lambda[:,0].to(device)
-            U=U.to(device)
+            # (Lambda,U) = torch.eig(adj.to_dense(),eigenvectors=True)
+            # Lambda=torch.tensor(Lambda).to(device)
+            # Lambda=Lambda[:,0].to(device)
+            # U=U.to(device)
+
+            Lambda_complex, U_complex = torch.linalg.eig(adj.to_dense())
+            Lambda = Lambda_complex.real.to(device)
+            U = U_complex.to(device)
             
-            torch.save(Lambda,osp.join('eigs',config['dataset'],'lambda.pt'))
-            torch.save(U,osp.join('eigs',config['dataset'],'U.pt'))
+            save_dir = osp.join('/content/GRACEIS/eigs', config['dataset'])
+            os.makedirs(save_dir, exist_ok=True)
+            torch.save(Lambda,osp.join('/content/GRACEIS/eigs',config['dataset'],'lambda.pt'))
+            torch.save(U,osp.join('/content/GRACEIS/eigs',config['dataset'],'U.pt'))
             
         else:
-            Lambda=torch.load(osp.join('eigs',config['dataset'],'lambda.pt')).to(device)
-            U=torch.load(osp.join('eigs',config['dataset'],'U.pt')).to(device)
+            Lambda=torch.load(osp.join('/content/GRACEIS/eigs',config['dataset'],'lambda.pt'), map_location='cuda:0').to(device)
+            U=torch.load(osp.join('/content/GRACEIS/eigs',config['dataset'],'U.pt'), map_location='cuda:0').to(device)
         mean=torch.zeros([Lambda.shape[0]]).to(device)
         global thetas, pre_theta
         thetas=[]
@@ -155,9 +161,9 @@ def train_cam(model:Model,optimizer,x,edge_index,y,num_epochs,config):
     node_cams=[]
     feature_cams=[]
     edge_cams=[]
-    feature_cam=torch.load(osp.join('cams',config['dataset'],'feature_cam.pt'))
-    node_cam=torch.load(osp.join('cams',config['dataset'],'node_cam.pt'))
-    edge_cam=torch.load(osp.join('cams',config['dataset'],'edge_cam.pt'))
+    feature_cam=torch.load(osp.join('/content/GRACEIS/cams',config['dataset'],'feature_cam.pt'), map_location='cuda:0')
+    node_cam=torch.load(osp.join('/content/GRACEIS/cams',config['dataset'],'node_cam.pt'), map_location='cuda:0')
+    edge_cam=torch.load(osp.join('/content/GRACEIS/cams',config['dataset'],'edge_cam.pt'), map_location='cuda:0')
     
     _,retain_edge=torch.topk(edge_cam,retain_edge_num)
     _,retain_feature=torch.topk(feature_cam,retain_feature_num)
@@ -267,7 +273,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='Cora')
     parser.add_argument('--gpu_id', type=int, default=0)
-    parser.add_argument('--config', type=str, default='config.yaml')
+    parser.add_argument('--config', type=str, default='/content/GRACEIS/config.yaml')
     parser.add_argument('--method', type=str, default='I')
     parser.add_argument('--retain_rate', type=float, default=0.2)
     args = parser.parse_args()

@@ -1,4 +1,5 @@
 import torch
+import os
 import numpy as np
 import matplotlib
 from matplotlib.ticker import MaxNLocator
@@ -64,5 +65,6 @@ class Recorder():
         plt.xlabel("(c))")
         plt.grid()
         plt.tight_layout()
-        plt.savefig('images/theta.svg')
+        os.makedirs('/content/images', exist_ok=True)
+        plt.savefig('/content/images/theta.svg')
         plt.close()
